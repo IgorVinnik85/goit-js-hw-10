@@ -1,42 +1,36 @@
 import './css/styles.css';
 import debounce from 'lodash.debounce';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
+import API from './fetchCntr';
 
 const DEBOUNCE_DELAY = 300;
 const input = document.querySelector('#search-box');
 const ul = document.querySelector('.country-list');
 
-input.addEventListener('input', debounce(fetchCountries, DEBOUNCE_DELAY));
+input.addEventListener('input', debounce(searchCountries, DEBOUNCE_DELAY));
 
-function fetchCountries(event) {
+function searchCountries(event) {
   if (event.target.value.trim() === '') {
     ul.innerHTML = '';
   }
-  fetch(
-    `https://restcountries.com/v3.1/name/${event.target.value}?fields=name,capital,population,flags,languages`
-  )
-    .then(responce => {
-      return responce.json();
-    })
-    .then(country => {
-      if (country.length > 10) {
-        return Notify.info(
-          'Too many matches found. Please enter a more specific name.'
-        );
-      } else if (country.length === 1) {
-        return renderMurkupOneCountry(country);
-      } else if (country.length < 10) {
-        return renderMurkupAllContryes(country);
-      }
-    })
-    .catch(error =>
-      Notify.failure(
-        `Oops, there is no country with that ${event.target.value}`
-      )
-    );
+
+  API.fetchCountries(event.target.value)
+
+    .then(render)
+    .catch(error);
 }
 
-// Guatemala
+function render(country) {
+  if (country.length > 10) {
+    return Notify.info(
+      'Too many matches found. Please enter a more specific name.'
+    );
+  } else if (country.length === 1) {
+    return renderMurkupOneCountry(country);
+  } else if (country.length < 10) {
+    return renderMurkupAllContryes(country);
+  }
+}
 
 function renderMurkupOneCountry(element) {
   const markup = element
@@ -66,4 +60,8 @@ function renderMurkupAllContryes(element) {
     .join('');
 
   ul.innerHTML = markup;
+}
+
+function error() {
+  Notify.failure(`Oops, there is no country with that name`);
 }
